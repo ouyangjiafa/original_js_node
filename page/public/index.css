@@ -1,0 +1,129 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+.container {
+  display: flex;
+  flex: 1;
+  justify-content: space-between;
+  background-color: #ff8037;
+  padding: 15px;
+}
+body .desc .item {
+  line-height: 40px;
+}
+body .desc .item input {
+  width: 150px;
+  line-height: 25px;
+}
+body .desc .item span {
+  float: left;
+  width: 100px;
+}
+body .desc .image .upload {
+  width: 150px;
+  height: 150px;
+  position: relative;
+  display: inline-block;
+  border: 1px solid rgb(233, 202, 202);
+  border-radius: 8px;
+  text-align: center;
+}
+body .desc .image .upload::before {
+  content: '';
+  display: inline-block;
+  height: inherit;
+  width: 2px;
+  background-color: #e7d6bf;
+}
+body .desc .image .upload::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: inline-block;
+  width: inherit;
+  height: 2px;
+  background-color: #e7d6bf;
+}
+body .desc .image .upload input {
+  width: inherit;
+  height: inherit;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  opacity: 0;
+}
+body .desc .image .preview {
+  width: 150px;
+  height: 150px;
+  /* border: 1px solid #999; */
+  border-radius: 8px;
+  display: none;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+body .desc .btn {
+  margin-top: 10px;
+}
+body .desc .btn button {
+  display: inline-block;
+  padding: 5px 8px;
+  color: #ffffff;
+  background-color: #2f9acc;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  border: none;
+}
+body .desc .btn button:first-child {
+  margin-right: 20px;
+}
+.container .list table tr td img {
+  width: 24px;
+  height: 24px;
+}
+.preview_wrap {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100;
+  background-color: rgba(3, 3, 3, 0.4)
+}
+.preview_wrap .preview_content {
+  padding: 10px;
+  position: relative;
+  display: inline-block;
+  border-radius: 10px;
+  background-color: #ff8037;
+}
+.preview_wrap .preview_content img {
+  width: 100%;
+  height: 100%;
+}
+.message_box {
+  /* max-width: 80%; */
+  padding: 8px 10px;
+  border-radius: 4px;
+  display: inline-block;
+  text-align: center;
+  word-break: break-all;
+  left: 50%;
+  top: 30px;
+  transform: translateX(-50%);
+  position: absolute;
+  z-index: 999;
+  animation: messageBox 0.5s ease-in-out;
+}
+@keyframes messageBox {
+  from { top: 0px }
+  to { top: 30px }
+}

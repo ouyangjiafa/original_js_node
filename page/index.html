@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" type="text/css" href="./public/index.css">
+</head>
+<body>
+  <div class="container">
+    <div class="desc">
+      <div class="name item">
+        <span class="txt">name:</span>
+        <input type="text" maxlength="10" name="f_name" onchange="_descData['name'] = this.value">
+      </div>
+      <div class="age item">
+        <span>age:</span>
+        <input type="number" max="100" name="f_age" onchange="_descData['age'] = this.value">
+      </div>
+      <div class="image item">
+        <span>image:</span>
+        <div class="upload" id="uploadImg">
+          <input type="file" accept="image" name="f_image" onchange="handlerImgChange(this)">
+        </div>
+        <div class="preview" id="previewImg"></div>
+      </div>
+      <div class="btn">
+        <button class="reset" onclick="handlerReset()">reset</button>
+        <button class="submit" onclick="handlerSubmit(this, 'submit')">submit</button>
+      </div>
+    </div>
+    <div class="list">
+      <div class="table">
+        <table>
+          <thead>
+            <tr>
+              <td>姓名</td>
+              <td>年龄</td>
+              <td>头像</td>
+              <td>操作</td>
+            </tr>
+          </thead>
+        </table>
+      </div>
+      <div class="pagination"></div>
+    </div>
+  </div>
+</body>
+<script type="module">
+  // import { RenderImgPreview, RenderInfoPreview } from '../utils'
+</script>
+<script>
+// 消息弹框
+class AlertMsg {
+  constructor(msg, type = 'success', delay = 2000) {
+    this.msg = msg
+    this.type = type
+    this.delay = delay
+    this.msgBox = null
+    this.render()
+  }
+  render() {
+    const colorOpt = {
+      'error': ['#f56c6c', '#f0f9eb'],
+      'warning': ['#e6a23c', '#fdf6ec'],
+      'info': ['#909399', '#f4f4f5'],
+      'success': ['#67c23a', '#f0f9eb']
+    }
+    const msgBox = document.createElement('div')
+    const colorItem = colorOpt[this.type]
+    msgBox.setAttribute('class', 'message_box')
+    msgBox.setAttribute('style', `color:${colorItem[0]}; background-color:${colorItem[1]}`)
+    msgBox.innerText = this.msg
+    this.msgBox = msgBox
+    document.body.appendChild(msgBox)
+    this.destroy()
+    console.log('destr')
+  }
+  destroy() {
+    setTimeout(() => {
+      document.body.removeChild(this.msgBox)
+    }, this.delay)
+  }
+}
+// 图层蒙版
+class Mask {
+  constructor() {
+    this.mask = null
+    this.renderMask()
+  }
+  renderMask() {
+    const content = document.createElement('div')
+    content.setAttribute('class', 'preview_content')
+    this.mask = document.createElement('div')
+    // const closeBtn = doucment.createElement('')
+    this.mask.addEventListener('click', this.close.bind(this))
+    this.mask.setAttribute('class', 'preview_wrap mask')
+    this.mask.appendChild(content)
+    // this.mask.innerHTML = '<div class="preview_content"></div>'
+  }
+  close(e) {
+    const classNames = ['preview_wrap', 'submit', 'reset']
+    ~classNames.indexOf(e.srcElement.className) && document.body.removeChild(this.mask)
+  }
+  render() {
+    document.body.appendChild(this.mask)
+  }
+}
+// 图片预览
+class RenderImgPreview extends Mask{
+  constructor({ src }) {
+    super()
+    this.src = src
+    // this.previewWrap = null
+  }
+  render() {
+    this.mask.childNodes[0].innerHTML = `<img src='${this.src}'/>`
+    super.render()
+  }
+}
+// 信息预览
+class RenderInfoPreview extends Mask {
+  constructor({ id, name, age, src, node}) {
+    super()
+    this.id = id
+    this.name = name
+    this.age = age
+    this.src = src
+    this.node = node
+  }
+  render() {
+    const { name, age, src, node, getNode } = this
+    this.nameNode = getNode.call(node, '.name', 'input')
+    this.ageNode = getNode.call(node, '.age', 'input')
+    this.previewNode = getNode.call(node, '.image', '.preview')
+    this.uploadNode = getNode.call(node, '.upload', 'input')
+    const cancleNode = getNode.call(node, '.btn', '.reset')
+    const confirmNode = getNode.call(node, '.btn', '.submit')
+    this.nameNode.value = name
+    this.ageNode.value = age
+    _descData = {
+      name,
+      age,
+      image: src
+    }
+    this.uploadNode.parentNode.style.display = 'none'
+    this.previewNode.style.cssText = `background-image: url(${src}); display: inline-block`
+    confirmNode.onclick = null
+    cancleNode.onclick = null
+    confirmNode.addEventListener('click', handlerSubmit.bind(this))
+    cancleNode.addEventListener('click', this.cancel)
+    this.mask.childNodes[0].appendChild(node)
+    super.render()
+  }
+  getNode(className, nodeName) {
+    return this.querySelector(className).querySelector(nodeName)
+  }
+  cancel(e) {
+    console.log('fuck', e)
+    super.close(e)
+  }
+}
+let _descData = {
+      name: '',
+      age: '',
+      image: ''
+    }
+let _list = []
+// new AlertMsg('请上传图片类文件！')
+const $ = document.querySelector.bind(document)
+const $All = document.querySelectorAll.bind(document)
+// 通过id获得元素
+const getNodeById = function (id) {
+  return  document.getElementById(id)
+}
+/*
+  target：目标元素
+  处理选择图片
+*/
+const handlerImgChange = function (target) {
+  new AlertMsg('请上传图片类文件！')
+  const file = target.files[0]
+  if (~file.type.indexOf('image')) {
+    let reader = new FileReader()
+    reader.readAsDataURL(file)
+    reader.onload = function (e) {
+      const newUrl = this.result
+      const previewImgNode = $('#previewImg')
+      const uploadImgNode = $('#uploadImg')
+      uploadImgNode.style.display = 'none'
+      previewImgNode.style.backgroundImage = `url(${newUrl})`
+      previewImgNode.style.display = 'inline-block'
+      _descData.image = newUrl
+    }
+  } else {
+    new AlertMsg('请上传图片类文件！')
+  }
+  console.log('e', target.files)
+}
+/*
+  重置
+*/
+const handlerReset = function(e) {
+  console.log('reset', e)
+}
+/*
+  提交
+*/
+const handlerSubmit = async function(e, type) {
+ let allow = true
+ for (const key in _descData) {
+   if (_descData[key].trim() === '') {
+    new AlertMsg('请把信息填完整')
+     allow = false
+     break
+   }
+ }
+ if (!allow) return
+ type = type === 'submit' ? 'add' : 'update'
+ console.log('_d', _descData)
+ const params = {..._descData, id: this.id}
+ const { code, data, msg } = await fetchRequest(`/api/${type}`, params, 'post')
+ if (code === 0) {
+  new AlertMsg(`${type} success`)
+   if (type === 'submit') { 
+    _list = _list.concat(data.list)
+    renderList(_list)
+   } else {{
+    getList()
+    this.cancel(e)
+   }}
+ } else {
+  new AlertMsg(msg) 
+ }
+}
+/**
+ * 获取人员列表
+*/
+const getList = async function() {
+  const { code, data: { list }, msg } = await fetchRequest(`/api/list?time=${Date.now()}`)
+  _list = list
+  renderList(list)
+}
+// 渲染人员列表
+const renderList = function (list) {
+  const table = $('table')
+  const tbodyNode = $('tbody')
+  const tbody = document.createElement('tbody')
+  const trs = []
+  tbodyNode && table.removeChild(tbodyNode)
+  list.map(item => {
+    const tr = document.createElement('tr')
+    const td = document.createElement('td')
+    const btnUpdate = document.createElement('button')
+    const btnDel = document.createElement('button')
+    // tr.setAttribute('class', 'item')
+    btnDel.innerText = 'delete'
+    btnDel.addEventListener('click', handleDelete.bind(item))
+    btnUpdate.innerText = 'update'
+    btnUpdate.addEventListener('click', handleUpdate.bind(item))
+    item.image = `data:image/png;base64,${item.image}`
+    // console.log('item', item.src)
+    // tr.innerHTML = '<div><button class="updateBtn" click="handleUpdate">delete</button><button class="deleteBtn" click="handleDelete">delete</button><button class="deleteBtn" click="handleDelete">delete</button></div>'
+    for (const key in item) {
+      if (~['_id'].indexOf(key)) continue
+      const td = document.createElement('td')
+      if (key === 'image') {
+        const img = document.createElement('img')
+        img.addEventListener('click', handlePreview.bind(item))
+        img.setAttribute('src', item[key])
+        td.appendChild(img)
+        // td.innerHTML = `<img src='data:image/png;base64,${item[key]}' onclick="handlePreivew(event)" width='20px' height='20px'/>`
+      } else {
+        td.innerHTML = `<span class='txt'>${item[key]}</span>`
+      }
+      tr.appendChild(td)
+    }
+    td.appendChild(btnUpdate)
+    td.appendChild(btnDel)
+    tr.appendChild(td)
+    tbody.appendChild(tr)
+  })
+  table.appendChild(tbody)
+}
+// 人员信息更新
+const handleUpdate = function(e) {
+  const { _id: id, name, age, image: src } = this
+  const node = $('.desc').cloneNode(true)
+  new RenderInfoPreview({ id, name, age, src, node }).render()
+}
+// 删除人员
+const handleDelete = async function(e) {
+  // document.removeChild(e.target)
+  const { name } = this
+  _list.some((item, index) => {
+    if(item.name === name) {
+      _list.splice(1, index)
+      $('tbody').removeChild($All('tbody tr')[index])
+      return true
+    }
+  })
+  const { code, msg, data } = await fetchRequest('/api/delete', { name }, 'POST')
+  if(code === 0) {
+    console.log('delData', data)
+    new AlertMsg('删除成功')
+  } else {
+    new AlertMsg(msg)
+  }
+}
+// 确定
+const handleConfirm = function () {
+  console.log('this', this)
+}
+// 图片预览
+const handlePreview = function(e) {
+  new RenderImgPreview({src: this.image}).render()
+}
+// ajax
+const fetchRequest = async function(url='', data = {}, type = 'GET') {
+  let options = {
+    credentials: 'include', // 自动发送cookie
+    method: type,
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    mode: 'cors', // 请求模式
+    cache: 'force-cache'
+  }
+  if (type.toUpperCase() === 'GET') {
+    let dataStr = ''
+    Object.keys(data).map(key => {
+      dataStr += `${key}=${data[key]}&`
+    })
+    if (dataStr !== '') {
+      dataStr = dataStr.replace(/&$/, '')
+      url = `http://localhost:3000/${url}?${dataStr}`
+    }    
+  } else if (type.toUpperCase() === 'POST') {
+    try {
+      Object.defineProperty(options, 'body', {
+      value: JSON.stringify(data)
+    })
+    } catch (error) {
+      console.log('page-err', error)
+    }
+  }
+  try{
+    const response = await fetch(url, options)
+    const responseJson = await response.json()
+    console.log('res0', response, responseJson)
+    return responseJson
+  }catch(error) {
+    throw new Error(error)
+  }
+}
+getList()
+</script>
+</html>
