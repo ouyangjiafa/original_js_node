@@ -156,7 +156,6 @@ class RenderInfoPreview extends Mask {
     return this.querySelector(className).querySelector(nodeName)
   }
   cancel(e) {
-    console.log('fuck', e)
     super.close(e)
   }
 }
@@ -166,7 +165,6 @@ let _descData = {
       image: ''
     }
 let _list = []
-// new AlertMsg('请上传图片类文件！')
 const $ = document.querySelector.bind(document)
 const $All = document.querySelectorAll.bind(document)
 // 通过id获得元素
@@ -178,7 +176,6 @@ const getNodeById = function (id) {
   处理选择图片
 */
 const handlerImgChange = function (target) {
-  new AlertMsg('请上传图片类文件！')
   const file = target.files[0]
   if (~file.type.indexOf('image')) {
     let reader = new FileReader()
