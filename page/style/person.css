@@ -1,13 +1,8 @@
-* {
-  margin: 0;
-  padding: 0;
-}
-.container {
-  display: flex;
+.desc {
   flex: 1;
-  justify-content: space-between;
-  background-color: #ff8037;
-  padding: 15px;
+}
+.table {
+  flex: 1;
 }
 body .desc .item {
   line-height: 40px;
@@ -80,50 +75,10 @@ body .desc .btn button {
 body .desc .btn button:first-child {
   margin-right: 20px;
 }
-.container .list table tr td img {
-  width: 24px;
-  height: 24px;
-}
-.preview_wrap {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 100;
-  background-color: rgba(3, 3, 3, 0.4)
-}
-.preview_wrap .preview_content {
-  padding: 10px;
-  position: relative;
-  display: inline-block;
-  border-radius: 10px;
+.person {
   background-color: #ff8037;
 }
-.preview_wrap .preview_content img {
-  width: 100%;
-  height: 100%;
-}
-.message_box {
-  /* max-width: 80%; */
-  padding: 8px 10px;
-  border-radius: 4px;
-  display: inline-block;
-  text-align: center;
-  word-break: break-all;
-  left: 50%;
-  top: 30px;
-  transform: translateX(-50%);
-  position: absolute;
-  z-index: 999;
-  animation: messageBox 0.5s ease-in-out;
-}
-@keyframes messageBox {
-  from { top: 0px }
-  to { top: 30px }
+.person .table table tr td img {
+  width: 24px;
+  height: 24px;
 }

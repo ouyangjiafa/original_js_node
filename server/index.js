@@ -4,14 +4,18 @@ const path = require('path')
 const url = require('url')
 const ObjectId = require('mongodb').ObjectId
 const { stringify } = require('./utils')
+const websocket = require('./websocket')
+const { requestNews } = require('../request')
 const { connectDB, connectCollection, insertOne, find, updateOne, deleteOne } = require('../DB')
+const { JWT } = require('./token')
   http.createServer( async (req, res) => {
     res.setHeader('content-type', 'text/html;charset=utf-8')
     let pathObj =  url.parse(req.url, true)
     let result = null
     let DB = null, COLLECTION = null
-    const pathName = pathObj.pathname
-    if (pathName === '/favicon.ico') {
+    const {pathname, query} = pathObj
+    // console.log('p', pathObj)
+    if (pathname === '/favicon.ico') {
       return
     }
     try {
@@ -20,25 +24,75 @@ const { connectDB, connectCollection, insertOne, find, updateOne, deleteOne } = 
       console.log('error', error)
     }
     COLLECTION = connectCollection(DB)
-    if (pathName === '/') {
+    if (pathname === '/') {
       fs.readFile(path.resolve(__dirname, '../page/index.html'), 'utf-8', (err, data) => {
-        res.writeHead(200, {'Content-Type': 'text/html'})
-        if (err) return console.log('err', err)
-        res.end(data)
+        if(err) {
+          console.log('err,', err)
+          res.end()
+        } else {
+          res.writeHead(200, {'Content-Type': 'text/html'})
+          res.end(data)
+        }
       })
-    }else if (~pathName.indexOf('/public')) {
-      fs.readFile(path.resolve(__dirname, `../page${pathName}`), 'utf-8', (err, data) => {
-        res.writeHead(200, {'Content-Type': 'text/css'})
-        if (err) return
-        res.end(data)
+    }else if (~pathname.indexOf('/style')) {
+      fs.readFile(path.resolve(__dirname, `../page${pathname}`), 'utf-8', (err, data) => {
+        if(err) {
+          console.log('err,', err)
+          res.end()
+        } else {
+          res.writeHead(200, {'Content-Type': `text/css`})
+          res.end(data)
+        }
       })
-    }else if (pathName === '/utils') {
-      fs.readFile(path.resolve(__dirname, '../page/utils.js'), 'utf-8', (err, data) => {
-        res.writeHead(200, { 'Content-Type': 'application/javascript' })
-        if(err) return
-        res.end(data) 
+    }else if (~pathname.indexOf('/utils')) {
+      fs.readFile(path.resolve(__dirname, `../page${pathname}.js`), 'utf-8', (err, data) => {
+        if(err) {
+          console.log('err,', err)
+          res.end()
+        } else {
+          res.writeHead(200, { 'Content-Type': 'application/javascript' })
+          res.end(data)
+        } 
       })
-    }else if (pathName === '/api/list') {
+    } else if (~pathname.indexOf('/static/image')) {
+      console.log(path.resolve(__dirname, `../page${pathname}`))
+      fs.readFile(path.resolve(__dirname, `../page${pathname}`), 'binary', (err, data) => {
+        if(err) {
+          console.log('err', err)
+          res.end()
+        } else {
+          res.writeHead(200, { 'Content-Type': 'image/png' })
+          res.write(data, 'binary')
+          res.end()
+        }
+      })
+    } else if (~pathname.indexOf('/api/login')) {
+      let payload = ''
+      req.on('data', chuck => {
+        payload += chuck
+      })
+      req.on('end', async () => {
+        payload = JSON.parse(decodeURI(payload.toString()))
+        const { account: name } = payload
+        try {
+          result = await find(COLLECTION, { name })
+          if(result.code) {
+            res.end({ code: result.code, msg: result.err.message, data: {} })
+          } else {
+            console.log('result', result.length)
+            if(!result.length) {
+              res.end(stringify({code: 2, msg: '账号密码错误', data: {}}))
+            }else {
+              const token = new JWT(name).generateToken()
+              console.log(new JWT(token).verifyToken())
+              res.end(stringify({ code: 0, msg: '', data: { token } }))
+            }
+          }
+        } catch (error) {
+          console.log('error2', error)
+        }
+      })
+    }else if (pathname === '/api/list') {
       try {
         result = await find(COLLECTION) 
       } catch (error) {
@@ -49,7 +103,7 @@ const { connectDB, connectCollection, insertOne, find, updateOne, deleteOne } = 
       } else {
         res.end(stringify({code: 0, msg: '', data: {list: result} }))
       }
-    }else if (~['/api/add', '/api/update'].indexOf(pathName)) {
+    }else if (~['/api/add', '/api/update'].indexOf(pathname)) {
       let payload = ''
       req.on('data', (chunk) => {
         payload += chunk
@@ -65,7 +119,7 @@ const { connectDB, connectCollection, insertOne, find, updateOne, deleteOne } = 
           res.end(stringify({code: DB.code, data: {}}))
         } else {
           try {
-            const type = ~pathName.indexOf('add') ? 'add' : 'update'
+            const type = ~pathname.indexOf('add') ? 'add' : 'update'
             if(type === 'add'){
               result = await find(COLLECTION)
               if (checkName(result, name)) {
@@ -103,7 +157,7 @@ const { connectDB, connectCollection, insertOne, find, updateOne, deleteOne } = 
           }
         }
       })
-    }else if(pathName === '/api/delete') {
+    }else if(pathname === '/api/delete') {
       let payload = ''
       req.on('data', (chunk) => {
         payload += chunk
@@ -121,6 +175,24 @@ const { connectDB, connectCollection, insertOne, find, updateOne, deleteOne } = 
           console.log('error', error)
         }
       })
+    }else if(pathname === '/api/news') {
+      result = await requestNews('https://news.baidu.com/')
+      res.end(stringify(result))
+    }else if(pathname === '/api/wechat/search') {
+      try {
+        const { name } = query
+        const reg = new RegExp(name)
+        const whereStr = {name: { $regex: reg }}
+        result = await find(COLLECTION, whereStr)
+        console.log('www-', whereStr)
+      } catch(error) {
+        console.log('error', error)
+      }
+      if(result.code) {
+        res.end(stringify({ code: result.code, msg: result.err.message, data: {} }))
+      } else {
+        res.end(stringify({ code: 0, msg: '', data: { list: result } }))
+      }
     }
   }).listen(3000)
 

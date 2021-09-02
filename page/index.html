@@ -4,11 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Document</title>
-  <link rel="stylesheet" type="text/css" href="./public/index.css">
+  <link rel="stylesheet" type="text/css" href="./style/index.css">
+  <link rel="stylesheet" type="text/css" href="./style/person.css">
+  <link rel="stylesheet" type="text/css" href="./style/wechat.css">
+  <script type="text/javascript"  src="./utils/index"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="desc">
+  <!-- 人员信息库录入 start -->
+  <div class="container person">
+    <div class="desc cell">
       <div class="name item">
         <span class="txt">name:</span>
         <input type="text" maxlength="10" name="f_name" onchange="_descData['name'] = this.value">
@@ -29,7 +33,7 @@
         <button class="submit" onclick="handlerSubmit(this, 'submit')">submit</button>
       </div>
     </div>
-    <div class="list">
+    <div class="table cell">
       <div class="table">
         <table>
           <thead>
@@ -45,132 +49,51 @@
       <div class="pagination"></div>
     </div>
   </div>
+  <!-- 人员信息库录入 end -->
+  <!-- 新闻天气 start -->
+  <div class="container request">
+  </div>
+  <!-- 新闻天气 end -->
+  <!-- 聊天 start-->
+  <div class="container wechat">
+    <div class="login cell">
+      <div class="account item">
+        <span class="txt">account:</span>
+        <input type="text" placeholder="从上面的列表选一个账号" onchange="_loginData['account'] = this.value">
+      </div>
+      <div class="password item">
+        <span class="txt">password:</span>
+        <input type="password" placeholder="账号名称加年龄" onchange="_loginData['password'] = this.value">
+      </div>
+      <div class="btn item">
+        <button class="public_cursor" onclick="login(event)">login</button>
+      </div>
+    </div>
+    <div class="control cell">
+      <div class="searcher">
+        <div class="search_item search_friend"></div>
+        <div class="search_item add_friend"></div>
+      </div>
+      <div class="friend_list"></div>
+    </div>
+    <div class="view cell">
+      <div class="title"></div>
+      <div calss="chat_conten"></div>
+    </div>
+  </div>
+   <!-- 聊天 end-->
 </body>
-<script type="module">
-  // import { RenderImgPreview, RenderInfoPreview } from '../utils'
-</script>
 <script>
-// 消息弹框
-class AlertMsg {
-  constructor(msg, type = 'success', delay = 2000) {
-    this.msg = msg
-    this.type = type
-    this.delay = delay
-    this.msgBox = null
-    this.render()
-  }
-  render() {
-    const colorOpt = {
-      'error': ['#f56c6c', '#f0f9eb'],
-      'warning': ['#e6a23c', '#fdf6ec'],
-      'info': ['#909399', '#f4f4f5'],
-      'success': ['#67c23a', '#f0f9eb']
-    }
-    const msgBox = document.createElement('div')
-    const colorItem = colorOpt[this.type]
-    msgBox.setAttribute('class', 'message_box')
-    msgBox.setAttribute('style', `color:${colorItem[0]}; background-color:${colorItem[1]}`)
-    msgBox.innerText = this.msg
-    this.msgBox = msgBox
-    document.body.appendChild(msgBox)
-    this.destroy()
-    console.log('destr')
-  }
-  destroy() {
-    setTimeout(() => {
-      document.body.removeChild(this.msgBox)
-    }, this.delay)
-  }
-}
-// 图层蒙版
-class Mask {
-  constructor() {
-    this.mask = null
-    this.renderMask()
-  }
-  renderMask() {
-    const content = document.createElement('div')
-    content.setAttribute('class', 'preview_content')
-    this.mask = document.createElement('div')
-    // const closeBtn = doucment.createElement('')
-    this.mask.addEventListener('click', this.close.bind(this))
-    this.mask.setAttribute('class', 'preview_wrap mask')
-    this.mask.appendChild(content)
-    // this.mask.innerHTML = '<div class="preview_content"></div>'
-  }
-  close(e) {
-    const classNames = ['preview_wrap', 'submit', 'reset']
-    ~classNames.indexOf(e.srcElement.className) && document.body.removeChild(this.mask)
-  }
-  render() {
-    document.body.appendChild(this.mask)
-  }
-}
-// 图片预览
-class RenderImgPreview extends Mask{
-  constructor({ src }) {
-    super()
-    this.src = src
-    // this.previewWrap = null
-  }
-  render() {
-    this.mask.childNodes[0].innerHTML = `<img src='${this.src}'/>`
-    super.render()
-  }
-}
-// 信息预览
-class RenderInfoPreview extends Mask {
-  constructor({ id, name, age, src, node}) {
-    super()
-    this.id = id
-    this.name = name
-    this.age = age
-    this.src = src
-    this.node = node
-  }
-  render() {
-    const { name, age, src, node, getNode } = this
-    this.nameNode = getNode.call(node, '.name', 'input')
-    this.ageNode = getNode.call(node, '.age', 'input')
-    this.previewNode = getNode.call(node, '.image', '.preview')
-    this.uploadNode = getNode.call(node, '.upload', 'input')
-    const cancleNode = getNode.call(node, '.btn', '.reset')
-    const confirmNode = getNode.call(node, '.btn', '.submit')
-    this.nameNode.value = name
-    this.ageNode.value = age
-    _descData = {
-      name,
-      age,
-      image: src
-    }
-    this.uploadNode.parentNode.style.display = 'none'
-    this.previewNode.style.cssText = `background-image: url(${src}); display: inline-block`
-    confirmNode.onclick = null
-    cancleNode.onclick = null
-    confirmNode.addEventListener('click', handlerSubmit.bind(this))
-    cancleNode.addEventListener('click', this.cancel)
-    this.mask.childNodes[0].appendChild(node)
-    super.render()
-  }
-  getNode(className, nodeName) {
-    return this.querySelector(className).querySelector(nodeName)
-  }
-  cancel(e) {
-    super.close(e)
-  }
+let _loginData = {
+  account: '',
+  password: ''
 }
 let _descData = {
       name: '',
       age: '',
       image: ''
     }
-let _list = []
-const $ = document.querySelector.bind(document)
-const $All = document.querySelectorAll.bind(document)
-// 通过id获得元素
-const getNodeById = function (id) {
-  return  document.getElementById(id)
-}
+let _tableData = []
 /*
   target：目标元素
   处理选择图片
@@ -216,14 +139,14 @@ const handlerSubmit = async function(e, type) {
  type = type === 'submit' ? 'add' : 'update'
  console.log('_d', _descData)
  const params = {..._descData, id: this.id}
- const { code, data, msg } = await fetchRequest(`/api/${type}`, params, 'post')
+ const { code, data, msg } = await fetchRequest(`api/${type}`, params, 'post')
  if (code === 0) {
   new AlertMsg(`${type} success`)
    if (type === 'submit') { 
-    _list = _list.concat(data.list)
-    renderList(_list)
+    _tableData = _tableData.concat(data.list)
+    renderList(_tableData)
    } else {{
-    getList()
+    getPersonList()
     this.cancel(e)
    }}
  } else {
@@ -233,9 +156,9 @@ const handlerSubmit = async function(e, type) {
 /**
  * 获取人员列表
 */
-const getList = async function() {
-  const { code, data: { list }, msg } = await fetchRequest(`/api/list?time=${Date.now()}`)
-  _list = list
+const getPersonList = async function() {
+  const { code, data: { list }, msg } = await fetchRequest(`api/list`)
+  _tableData = list
   renderList(list)
 }
 // 渲染人员列表
@@ -289,14 +212,14 @@ const handleUpdate = function(e) {
 const handleDelete = async function(e) {
   // document.removeChild(e.target)
   const { name } = this
-  _list.some((item, index) => {
+  _tableData.some((item, index) => {
     if(item.name === name) {
-      _list.splice(1, index)
+      _tableData.splice(1, index)
       $('tbody').removeChild($All('tbody tr')[index])
       return true
     }
   })
-  const { code, msg, data } = await fetchRequest('/api/delete', { name }, 'POST')
+  const { code, msg, data } = await fetchRequest('api/delete', { name }, 'POST')
   if(code === 0) {
     console.log('delData', data)
     new AlertMsg('删除成功')
@@ -304,53 +227,37 @@ const handleDelete = async function(e) {
     new AlertMsg(msg)
   }
 }
-// 确定
-const handleConfirm = function () {
-  console.log('this', this)
+// 获取新闻列表
+const getNewsList = async function () {
+  const { code, data, msg } = await fetchRequest('api/news')
+  console.log(data)
 }
 // 图片预览
 const handlePreview = function(e) {
   new RenderImgPreview({src: this.image}).render()
 }
-// ajax
-const fetchRequest = async function(url='', data = {}, type = 'GET') {
-  let options = {
-    credentials: 'include', // 自动发送cookie
-    method: type,
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json'
-    },
-    mode: 'cors', // 请求模式
-    cache: 'force-cache'
-  }
-  if (type.toUpperCase() === 'GET') {
-    let dataStr = ''
-    Object.keys(data).map(key => {
-      dataStr += `${key}=${data[key]}&`
-    })
-    if (dataStr !== '') {
-      dataStr = dataStr.replace(/&$/, '')
-      url = `http://localhost:3000/${url}?${dataStr}`
-    }    
-  } else if (type.toUpperCase() === 'POST') {
-    try {
-      Object.defineProperty(options, 'body', {
-      value: JSON.stringify(data)
-    })
-    } catch (error) {
-      console.log('page-err', error)
-    }
-  }
-  try{
-    const response = await fetch(url, options)
-    const responseJson = await response.json()
-    console.log('res0', response, responseJson)
-    return responseJson
-  }catch(error) {
-    throw new Error(error)
-  }
+getPersonList()
+
+/**************wechat************/
+const websocket = new WebSocket('ws://localhost:3001')
+websocket.onopen = function() {
+  console.log('open')
 }
-getList()
+websocket.onerror = function(err) {
+  console.warn('err', err)
+}
+websocket.onmessage = function(res) {
+  console.log('res', res)
+}
+const searcher = new Searcher($('.search_friend'), 'search')
+const adder = new Searcher($('.add_friend'), 'add')
+const login = async function(e) {
+  const { account, password } = _loginData
+  if(!account.trim()) return new AlertMsg('请填写账号')
+  if(!password.trim()) return new AlertMsg('请填写密码')
+  const { code, msg, data } = await fetchRequest('api/login', {account, password}, 'POST')
+  console.log(code, msg, data)
+}
+// getNewsList()
 </script>
 </html>
