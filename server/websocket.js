@@ -35,7 +35,7 @@ websocket.listen('3001', (a, b, c) => {
   console.log('abc')
 })
 websocket.on('error', err => {
-  console.log('err-', err)
+  console.error('err-', err)
 })
 module.exports = {
   websocket

@@ -1,7 +1,6 @@
 const request = require('https').request
 const { URL } = require('url')
 const cheerio = require('cheerio')
-console.log('URL', URL)
 const requestNews = function(url) {
   return new Promise((resolve, reject) => {
     let options = new URL(url)
@@ -18,7 +17,7 @@ const requestNews = function(url) {
       })
     })
     req.on('error', err => {
-      console.log('err', err)
+      console.error('err', err)
       reject({ code: 1, msg:`${err.message}`, data: { err } })
     })
     req.end()

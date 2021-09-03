@@ -14,7 +14,6 @@ class JWT {
   }
   generateToken() {
     const exp = Math.floor(Date.now()/1000) + (60 * 60 * 2)
-    console.log(typeof privateKey)
     const token = jwt.sign({ exp, data: this.data}, privateKey, { algorithm: 'HS256'})
     return token
   }
@@ -27,7 +26,7 @@ class JWT {
         res = {code: 401, msg: 'jwt expire', data: {}}
       }
     } catch (error) {
-      console.log('eer', error)
+      // console.error('err', error)
       res = {code: 401, msg: error.message, data: {}}
     }
     return res

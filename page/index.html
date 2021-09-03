@@ -113,9 +113,8 @@ const handlerImgChange = function (target) {
       _descData.image = newUrl
     }
   } else {
-    new AlertMsg('请上传图片类文件！')
+    new AlertMsg('请上传图片类文件！', 'warning')
   }
-  console.log('e', target.files)
 }
 /*
   重置
@@ -130,36 +129,43 @@ const handlerSubmit = async function(e, type) {
  let allow = true
  for (const key in _descData) {
    if (_descData[key].trim() === '') {
-    new AlertMsg('请把信息填完整')
+    new AlertMsg('请把信息填完整', 'warning')
      allow = false
      break
    }
  }
  if (!allow) return
  type = type === 'submit' ? 'add' : 'update'
- console.log('_d', _descData)
- const params = {..._descData, id: this.id}
- const { code, data, msg } = await fetchRequest(`api/${type}`, params, 'post')
- if (code === 0) {
-  new AlertMsg(`${type} success`)
-   if (type === 'submit') { 
-    _tableData = _tableData.concat(data.list)
-    renderList(_tableData)
-   } else {{
-    getPersonList()
-    this.cancel(e)
-   }}
- } else {
-  new AlertMsg(msg) 
+ try {
+  const params = {..._descData, id: this.id}
+  const { code, data, msg } = await fetchRequest(`api/${type}`, params, 'post')
+  if (code === 0) {
+   new AlertMsg(`${type} success`)
+    if (type === 'submit') { 
+     _tableData = _tableData.concat(data.list)
+     renderList(_tableData)
+    } else {{
+     getPersonList()
+     this.cancel(e)
+    }}
+  } else {
+   new AlertMsg(msg, 'error') 
+  } 
+ } catch (error) {
+  console.error('error', error)
  }
 }
 /**
  * 获取人员列表
 */
 const getPersonList = async function() {
-  const { code, data: { list }, msg } = await fetchRequest(`api/list`)
-  _tableData = list
-  renderList(list)
+  try {
+    const { code, data: { list }, msg } = await fetchRequest(`api/list`)
+    _tableData = list
+    renderList(list) 
+  } catch (error) {
+    console.error('error', error)
+  }
 }
 // 渲染人员列表
 const renderList = function (list) {
@@ -179,7 +185,6 @@ const renderList = function (list) {
     btnUpdate.innerText = 'update'
     btnUpdate.addEventListener('click', handleUpdate.bind(item))
     item.image = `data:image/png;base64,${item.image}`
-    // console.log('item', item.src)
     // tr.innerHTML = '<div><button class="updateBtn" click="handleUpdate">delete</button><button class="deleteBtn" click="handleDelete">delete</button><button class="deleteBtn" click="handleDelete">delete</button></div>'
     for (const key in item) {
       if (~['_id'].indexOf(key)) continue
@@ -219,18 +224,25 @@ const handleDelete = async function(e) {
       return true
     }
   })
-  const { code, msg, data } = await fetchRequest('api/delete', { name }, 'POST')
-  if(code === 0) {
-    console.log('delData', data)
-    new AlertMsg('删除成功')
-  } else {
-    new AlertMsg(msg)
+  try {
+    const { code, msg, data } = await fetchRequest('api/delete', { name }, 'POST')
+    if(code === 0) {
+      new AlertMsg('删除成功')
+    } else {
+      new AlertMsg(msg)
+    } 
+  } catch (error) {
+    console.error('error', error)
   }
 }
 // 获取新闻列表
 const getNewsList = async function () {
-  const { code, data, msg } = await fetchRequest('api/news')
-  console.log(data)
+  try {
+    const { code, data, msg } = await fetchRequest('api/news')
+    console.log(data) 
+  } catch (error) {
+    console.error('error', error)
+  }
 }
 // 图片预览
 const handlePreview = function(e) {
@@ -253,10 +265,21 @@ const searcher = new Searcher($('.search_friend'), 'search')
 const adder = new Searcher($('.add_friend'), 'add')
 const login = async function(e) {
   const { account, password } = _loginData
-  if(!account.trim()) return new AlertMsg('请填写账号')
-  if(!password.trim()) return new AlertMsg('请填写密码')
-  const { code, msg, data } = await fetchRequest('api/login', {account, password}, 'POST')
-  console.log(code, msg, data)
+  if(!account.trim()) return new AlertMsg('请填写账号', 'warning')
+  if(!password.trim()) return new AlertMsg('请填写密码', 'warning')
+  try {
+    const { code, msg, data } = await fetchRequest('api/login', {account, password}, 'POST')
+    if(code === 0) {
+      localStorage.setItem('_TOKEN', data.token)
+      localStorage.setItem('_INFO', JSON.stringify(data.info))
+      new AlertMsg('登录成功')
+    } else {
+      new AlertMsg(msg, 'error')
+    }
+    console.log(code, msg, data) 
+  } catch (error) {
+    console.error('error', error)
+  }
 }
 // getNewsList()
 </script>

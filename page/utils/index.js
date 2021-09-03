@@ -1,3 +1,4 @@
+
 // 消息弹框
 class AlertMsg {
   constructor(msg, type = 'success', delay = 2000) {
@@ -5,6 +6,7 @@ class AlertMsg {
     this.type = type
     this.delay = delay
     this.msgBox = null
+    this.$el = this
     this.render()
   }
   render() {
@@ -22,11 +24,12 @@ class AlertMsg {
     this.msgBox = msgBox
     document.body.appendChild(msgBox)
     this.destroy()
-    console.log('destr')
+    return this.$el
   }
   destroy() {
     setTimeout(() => {
       document.body.removeChild(this.msgBox)
+      this.$el = null
     }, this.delay)
   }
 }
@@ -66,7 +69,7 @@ class Mask {
   }
 }
 
-// 加载
+// 加载提示
 class Loading extends Mask {
   constructor(opt = {}) {
     const { fullscreen = true, modalClose = true, wrapNode = null } = opt
@@ -144,8 +147,9 @@ class RenderInfoPreview extends Mask {
 // 搜索
 class Searcher {
   constructor(wrapNode, type) {
-    this.list = null
+    this.list = []
     this.loadObj = null
+    this.value = ''
     this.wrapNode = wrapNode
     this.type = type
     this.render()
@@ -177,7 +181,7 @@ class Searcher {
   }
   renderUl() {
     const { loadObj, wrapNode, ulNode } = this
-    loadObj && loadObj.wrapNode && wrapNode && wrapNode.removeChild(loadObj.wrapNode)
+    this.closeLoad()
     if(ulNode) {
       wrapNode.removeChild(ulNode)
     }
@@ -200,9 +204,11 @@ class Searcher {
     const fragment = document.createDocumentFragment()
     this.list.map(item => {
       const { name, image, age } = item
+      if(INFO.name === name) return
       const li = document.createElement('li')
       const img = document.createElement('img')
       const span = document.createElement('span')
+      // li.addEventListener('click', this.clickItem.bind(item))
       li.setAttribute('class', 'item public_cursor')
       li.setAttribute('data-name', `${name}`)
       img.setAttribute('src', `data:image/png;base64,${image}`)
@@ -215,7 +221,7 @@ class Searcher {
   }
   renderLoad() {
     const div = document.createElement('div')
-    div.setAttribute('class', 'wrap load')
+    div.setAttribute('class', 'wrap load scroll_bar')
     this.wrapNode.appendChild(div)
     this.loadObj = new Loading({ fullscreen:false, modalClose:false, wrapNode: div })
   }
@@ -223,25 +229,67 @@ class Searcher {
     this.iconNode.style.display = 'none'
     this.renderInput()
   }
-  clickUl(e) {
+  // clickItem(e) {
+  //   const { _id: id, name, age, image } = this
+  //   const { code, msg, data } = await fetchRequest('api/auth/wechat/add', {id, name, aga, image}, 'POST')
+  //   if(code === 0) {
+  //     this.list.splice()
+  //   }
+  // }
+  async clickUl(e) {
     console.log(e.target.getAttribute('data-name'))
-  }
-  async change(e) {
-    this.renderLoad()
-    if(this.type === 'add') {
-      const {code, msg, data} = await fetchRequest('api/wechat/search', {name: e.target.value})
+    const itemName = e.target.getAttribute('data-name')
+    let params = null, index = ''
+    this.list.some((item, i) => {
+      if (item.name === itemName) {
+        params = item
+        index = i
+        return true
+      }
+    })
+    if(!params) return
+    this.loadObj || this.renderLoad()
+    const { _id: id, name, age, image } = params
+    try {
+      const { code, msg } = await fetchRequest('api/auth/wechat/add', {id, name, age, image}, 'POST')
       if(code === 0) {
-        this.list = data.list
+        new AlertMsg('添加好友成功')
+        this.list.splice(index, 1)
         this.renderUl()
       } else {
-        new AlertMsg(msg)
+        new AlertMsg(msg, 'error')
+      } 
+    } catch (error) {
+      console.error('error', error)
+    }
+  }
+  async change(e) {
+    this.value = e.target.value
+    this.loadObj || this.renderLoad()
+    if(this.type === 'add') {
+      try {
+        const {code, msg, data} = await fetchRequest('api/auth/wechat/search', {name: this.value})
+        if(code === 0) {
+          this.list = data.list
+          this.renderUl()
+        } else {
+          this.closeLoad()
+          new AlertMsg(msg, 'error')
+        }
+      } catch (error) {
+        console.error('error', error)
       }
     } else {
 
     }
   }
-  async request() {
-    return fetchRequest('api/wechat/search', {name: this.target.value})
+  closeLoad() {
+    const { loadObj, wrapNode } = this
+    if(loadObj) {
+      loadObj.wrapNode && wrapNode && wrapNode.removeChild(loadObj.wrapNode)
+      loadObj.close()
+      this.loadObj = null
+    }
   }
   close() {
     const { inputNode, cancelNode, iconNode, ulNode } = this
@@ -251,6 +299,49 @@ class Searcher {
     cancelNode && (cancelNode.style.display = 'none')
     iconNode && (iconNode.style.display = 'inline-block')
     ulNode && (ulNode.style.display = 'none')
+  }
+}
+
+// 好友列表
+class friendList {
+  constructor(wrapNode, list = []) {
+    this.wrapNode = wrapNode
+    this.list = list
+  }
+  renderul() {
+    const ul = createNode('ul')
+    const lis = this.renderli()
+    if(lis.length) {
+      ul.appendChild()
+    } else {
+      const emptyNode = createNode('div', { 'class': 'emtpy_tip' }, 'nothing friend info')
+      ul.appendChild(emptyNode)
+    }
+  }
+  renderli() {
+    const { list } = this
+    const fragment = document.createDocumentFragment()
+    const names = ['li', 'img', 'span', 'span', 'span', 'div', 'div', 'div', ]
+    const attrs = [{'class': 'item'}, {'class': 'avater'}, {'class': 'name'}, {'class': 'chat'}, {'class': 'date'}]
+    list.map(item => {
+      const { name, image, chat, date } = item
+      const texts = ['', '', name, chat, date]
+      attrs[1].src = image
+      const [ li, img, spanName, spanChat, spanDate, divLeft, divCenter, divRight ] = createNode(names, attrs, texts)
+      divLeft.appendChild(img)
+      divLeft.appendChild(spanName)
+      divCenter.appendChild(spanChat)
+      divRight.appendChild(spanDate)
+      li.appendChild(divLeft)
+      li.appendChild(divCenter)
+      li.appendChild(divRight)
+      fragment.appendChild(li)
+    })
+    return fragment
+  }
+  render() {
+    const content = this.renderul()
+   this.wrapNode.appendChild(content)
   }
 }
 
@@ -266,6 +357,7 @@ const fetchRequest = async function(url='', data = {}, type = 'GET') {
     mode: 'cors', // 请求模式
     cache: 'force-cache'
   }
+  url.includes('/auth/') && (options.headers['Authorization'] = localStorage.getItem('_TOKEN'))
   if (type.toUpperCase() === 'GET') {
     let dataStr = `time=${Date.now()}&`
     Object.keys(data).map(key => {
@@ -281,7 +373,7 @@ const fetchRequest = async function(url='', data = {}, type = 'GET') {
       value: JSON.stringify(data)
     })
     } catch (error) {
-      console.log('page-err', error)
+      console.error('page-err', error)
     }
   }
   try{
@@ -308,6 +400,37 @@ const debounce = function(fn, delay = 500) {
 
 // 节流
 const throttle = function(fn, delay) {}
-
+const createNode = function(names = 'div', attrs = {}, texts = '') {
+  try {
+    const node = null
+    const nodeList = []
+    if(Array.isArray(names) && Array.isArray(attrs) && Array.isArray(texts)) {
+      names.map((name, index) => {
+        node = document.createElement(name)
+        node.innerText = texts[index] || ''
+        const attr = attrs[index]
+        if (attr) {
+          for (const key in attr) {
+            node.setAttribute(key, attr[key])
+          }
+        }
+        nodeList.push(node)
+      })
+    } else if (typeof names === 'string' && typeof attrs === 'object' && typeof texts === 'string')  {
+      node = document.createElement(names)
+      node.innerText = texts
+      for (const key in attrs) {
+        node.setAttribute(key, attrs[key])
+      }
+      nodeList.push(node)
+    } else {
+      throw new Error('argument require to [Array, Array, Array] or [String, Object, String]')
+    }
+    return nodeList
+  } catch (error) {
+    throw new Error(error)
+  }
+}
 const $ = document.querySelector.bind(document)
 const $All = document.querySelectorAll.bind(document)
+const INFO = JSON.parse(localStorage.getItem('_INFO'))

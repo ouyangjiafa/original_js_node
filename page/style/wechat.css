@@ -62,7 +62,7 @@
   background-image: url(../static/image/icon_search.png);
 }
 .wechat .control .searcher .wrap {
-  width: 80%;
+  width: 70%;
   height: 180px;
   max-height: 180px;
   overflow: hidden;
